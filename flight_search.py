@@ -3,7 +3,7 @@ import datetime as dt
 
 
 TEQUILA_API_KEY = 'i6klOJFF-DuZ5Ziz2QPik2NP5NUVjt9Z'
-FLY_FROM = 'LED'
+FLY_FROM = 'MOW'
 FLY_TO = 'KGD'
 SEARCHING_DAYS = 2
 TODAY = str(dt.datetime.now().strftime('%d/%m/%Y'))
@@ -33,15 +33,14 @@ class FlightSearch:
             'curr': 'RUB',
             'flight_type': 'round',
             'adult_hold_bag': '0,0',
+            'max_stopovers': 2,
         }
 
     def response_requests(self):
         for iata in self.list_iata:
             self.search_params['fly_to'] = iata
             self.response = requests.get(url=SEARCH_ENDPOINT, params=self.search_params, headers=TEQUILA_HEADER)
-            # for data in self.response.json()['data']:
             self.data = self.response.json()['data']
-            # print(self.response.text)
             self.price = [price['price'] for price in self.data]
             self.air_company = [air['airlines'] for air in self.data]
             self.num_available_seats = [seats['availability'] for seats in self.data]
@@ -52,9 +51,13 @@ class FlightSearch:
     def print_results(self):
         # result_price = []
         print(f"Race from {self.search_params['fly_from']} to: {self.search_params['fly_to']}")
+        i = 0
         try:
-            lower_price = self.price[0]
-            i = 0
+            seats = self.num_available_seats[i]['seats']
+            for i in range(0, len(self.data)):
+                if self.num_available_seats[i]['seats']:
+                    lower_price = self.price[i]
+                    break
         except IndexError:
             print('No flights!')
         else:
@@ -62,13 +65,13 @@ class FlightSearch:
                 if lower_price > self.price[index] and self.num_available_seats[i]['seats']:
                     lower_price = self.price[index]
                     i = index
-            print(f"Option {i + 1}: \n Price: {self.price[index]} \n "
-                  f"Number of available seats: {self.num_available_seats[index]['seats']} \n"
-                  f"Air company: {self.air_company[index]} \n "
-                  f"Departure time: {self.departure_time[index]}")
-            if len(self.route[index]) > 1:
-                print(f"Number of transfers is: {len(self.route[index])}")
-                for city in self.route[index]:
+            print(f"Option {i + 1}: \n Price: {self.price[i]} \n "
+                  f"Number of available seats: {self.num_available_seats[i]['seats']} \n"
+                  f"Air company: {self.air_company[i]} \n "
+                  f"Departure time: {self.departure_time[i]}")
+            if len(self.route[i]) > 1:
+                print(f"Number of transfers is: {len(self.route[i])}")
+                for city in self.route[i]:
                     print(f"Departure city: {city['cityFrom']}, Arrived city: {city['cityTo']} ")
             else:
                 print('Without transfer!')
